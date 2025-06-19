@@ -16,6 +16,7 @@ service:
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "eipalloc-063857a06de4973da"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-075c8a750821b30f8"
 
 resources:
   limits:
