@@ -86,7 +86,8 @@ resource "aws_instance" "prometheus" {
 
   user_data = templatefile("${path.module}/scripts/user_data.sh", {
     region       = var.region,
-    cluster_name = aws_eks_cluster.main.name
+    cluster_name = aws_eks_cluster.main.name,
+    app_lb_dns   = data.local_file.lb_dns.content
   })
 
   tags = {
@@ -105,4 +106,21 @@ resource "aws_eip" "prometheus" {
 resource "aws_eip_association" "prometheus" {
   instance_id   = aws_instance.prometheus.id
   allocation_id = aws_eip.prometheus.id
+}
+
+resource "null_resource" "get_lb_dns" {
+  depends_on = [aws_eks_cluster.main, kubernetes_manifest.argocd_application]
+
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --region ${var.region} --name ${local.project}-${var.environment}-eks-cluster && kubectl get svc -n adc-app adc-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' > ${path.module}/lb_dns.txt || echo 'pending' > ${path.module}/lb_dns.txt"
+  }
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+}
+
+data "local_file" "lb_dns" {
+  depends_on = [null_resource.get_lb_dns]
+  filename   = "${path.module}/lb_dns.txt"
 }
