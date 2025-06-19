@@ -68,7 +68,6 @@ jobs:
       - name: Auto-approve and merge PR
         if: steps.cpr.outputs.pull-request-number
         run: |
-          gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
           gh pr merge --admin --merge "${{ steps.cpr.outputs.pull-request-number }}" --delete-branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
