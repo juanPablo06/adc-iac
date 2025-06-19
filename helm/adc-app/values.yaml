@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: "968185520468.dkr.ecr.us-east-1.amazonaws.com/adc-dev-ecr-repository"
-  tag: "${IMAGE_TAG}"
+  tag: "e5f17d266481edf3b64efbd17f0afb8a03cac9d7"
   pullPolicy: IfNotPresent
 
 namespace: adc-app
