@@ -54,3 +54,7 @@ data "aws_ami" "amazon_linux_2023" {
     values = ["x86_64"]
   }
 }
+
+data "tls_certificate" "github" {
+  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+}

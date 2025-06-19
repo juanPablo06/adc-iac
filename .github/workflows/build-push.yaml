@@ -9,11 +9,15 @@ on:
       - "app/**"
       - "helm/**"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
+      ECR_REPOSITORY_URL: ${{ vars.ECR_REPOSITORY_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,9 +25,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::968185520468:role/github-actions-role
+          aws-region: us-east-1
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -38,10 +41,6 @@ jobs:
 
       - name: Set image tag env var
         run: echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
-
-      - name: Update Helm chart values
-        run: |
-          sed -i "s|\${IMAGE_TAG}|${{ env.IMAGE_TAG }}|g" helm/adc-app/values.yaml
 
       - name: Commit and push updated Helm chart
         run: |
