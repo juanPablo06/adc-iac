@@ -1,0 +1,52 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "helm/**"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPOSITORY_URL: ${{ environment.ECR_REPOSITORY_URL }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
+
+      - name: Set image tag env var
+        run: echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Update Helm chart values
+        run: |
+          sed -i "s|\${IMAGE_TAG}|${{ env.IMAGE_TAG }}|g" helm/adc-app/values.yaml
+
+      - name: Commit and push updated Helm chart
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add helm/adc-app/values.yaml
+          git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
